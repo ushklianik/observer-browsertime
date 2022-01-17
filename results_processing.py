@@ -20,7 +20,7 @@ TESTS_PATH = environ.get("tests_path", '/')
 TEST_NAME = environ.get("JOB_NAME")
 
 try:
-    print(f"Get thresholds for: {TEST_NAME}")
+    # Get thresholds
     res = None
     try:
         res = requests.get(
@@ -37,23 +37,21 @@ try:
     except ValueError:
         thresholds = []
 
-    print(f"Thresholds: {thresholds}")
     all_thresholds: list = list(filter(lambda _th: _th['scope'] == 'all', thresholds))
     every_thresholds: list = list(filter(lambda _th: _th['scope'] == 'every', thresholds))
     page_thresholds: list = list(filter(lambda _th: _th['scope'] != 'every' and _th['scope'] != 'all', thresholds))
-    print(f"all_thresholds: {all_thresholds}")
-    print(f"every_thresholds: {every_thresholds}")
-    print(f"page_thresholds: {page_thresholds}")
+
+    # Read results json file
     results_path = f"/browsertime/browsertime-results/{sys.argv[2]}/"
     dir_name = listdir(results_path)
     json_path = f"{results_path}{dir_name[0]}/browsertime.json"
-
-    all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
-                   "dom_content_loading": [], "dom_processing": [], "first_contentful_paint": [],
-                   "largest_contentful_paint": [], "cumulative_layout_shift": [], "total_blocking_time": [],
-                   "first_visual_change": [], "last_visual_change": []}
     with open(json_path, "r") as f:
         json_data = loads(f.read())
+
+        all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
+                       "dom_content_loading": [], "dom_processing": [], "first_contentful_paint": [],
+                       "largest_contentful_paint": [], "cumulative_layout_shift": [], "total_blocking_time": [],
+                       "first_visual_change": [], "last_visual_change": []}
         test_thresholds_total = 0
         test_thresholds_failed = 0
         for page in json_data:
@@ -77,13 +75,16 @@ try:
                            "first_visual_change": [each["FirstVisualChange"] for each in page["visualMetrics"]],
                            "last_visual_change": [each["LastVisualChange"] for each in page["visualMetrics"]]}
 
+            # Add page results to the summary dict
             for metric in list(all_results.keys()):
                 all_results[metric].extend(page_result[metric])
 
+            # aggregate page results
             aggregated_result = {"requests": len(page_result["total"]), "domains": 1}
             for metric in list(page_result.keys()):
                 aggregated_result[metric] = get_aggregated_value(sys.argv[3], page_result[metric])
 
+            # Process thresholds with scope = every
             for th in every_thresholds:
                 test_thresholds_total += 1
                 page_thresholds_total += 1
@@ -96,6 +97,7 @@ try:
                     print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {aggregated_result.get(th['target'])}"
                           f" violates rule {th['comparison']} {th['metric']} [FAILED]")
 
+            # Process thresholds for current page
             for th in page_thresholds:
                 if th["scope"] == f'{page["info"]["url"]}@open':
                     test_thresholds_total += 1
@@ -109,6 +111,7 @@ try:
                         print(f"Threshold: {th['name']} {th['scope']} {th['target']} {th['aggregation']} value {aggregated_result.get(th['target'])}"
                               f" violates rule {th['comparison']} {th['metric']} [FAILED]")
 
+            # Update report with page results
             data = {
                 "name": page["info"]["url"],
                 "type": "page",
@@ -130,6 +133,7 @@ try:
             except Exception:
                 print(format_exc())
 
+    # Process thresholds with scope = all
     for th in all_thresholds:
         test_thresholds_total += 1
         if not is_threshold_failed(get_aggregated_value(th["aggregation"], all_results.get(th["target"])),
@@ -141,6 +145,7 @@ try:
             print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {aggregated_result.get(th['target'])}"
                   f" violates rule {th['comparison']} {th['metric']} [FAILED]")
 
+    # Finalize report
     time = datetime.now(tz=pytz.timezone("UTC"))
     exception_message = ""
     if test_thresholds_total:
