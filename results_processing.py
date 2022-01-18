@@ -80,7 +80,7 @@ try:
                 all_results[metric].extend(page_result[metric])
 
             # aggregate page results
-            aggregated_result = {"requests": len(page_result["total"]), "domains": 1}
+            aggregated_result = {"requests": len(page_result["total"]), "domains": 1, "time_to_interactive": 0} # there is no TTI in browsertime json
             for metric in list(page_result.keys()):
                 aggregated_result[metric] = get_aggregated_value(sys.argv[3], page_result[metric])
 
