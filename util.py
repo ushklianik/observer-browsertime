@@ -44,7 +44,7 @@ def percentile(data, percentile):
     return sorted(data)[int(math.ceil((size * percentile) / 100)) - 1]
 
 
-def process_page_results(page_name, path, galloper_url, project_id, token, timestamp, prefix, loops=2):
+def process_page_results(page_name, path, galloper_url, project_id, token, timestamp, prefix, loops):
     print(f"processing: {path}")
     report_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/reports"
     static_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/sitespeedstatic"
@@ -173,13 +173,13 @@ def upload_static_files(path, page_name, timestamp, galloper_url, project_id, to
         upload_file(f"{page_name}_{timestamp}_{i}.mp4", f"{path}data/video/", galloper_url, project_id, token)
 
 
-def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token):
+def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token, loops):
     report_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/reports"
     static_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/sitespeedstatic"
     for each in ["index.html", "detailed.html", "pages.html", "domains.html", "toplist.html", "assets.html", "settings.html", "help.html"]:
         with open(f"{path}{each}", "r", encoding='utf-8') as f:
             html = f.read()
-        html = update_page_results_html(html, report_bucket, static_bucket, "", timestamp, 2, "")
+        html = update_page_results_html(html, report_bucket, static_bucket, "", timestamp, loops, "")
         with open(f"/{timestamp}_{each}", 'w') as f:
             f.write(html)
         upload_file(f"{timestamp}_{each}", "/", galloper_url, project_id, token)

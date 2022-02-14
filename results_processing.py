@@ -47,7 +47,7 @@ try:
     upload_distributed_report(timestamp, URL, PROJECT_ID, TOKEN)
     results_path = f"/sitespeed.io/sitespeed-result/{sys.argv[2].replace('.', '_')}/"
     dir_name = listdir(results_path)
-    upload_distributed_report_files(f"{results_path}{dir_name[0]}/", timestamp, URL, PROJECT_ID, TOKEN)
+    upload_distributed_report_files(f"{results_path}{dir_name[0]}/", timestamp, URL, PROJECT_ID, TOKEN, sys.argv[3])
     results_path = f"{results_path}{dir_name[0]}/pages/"
     dir_names = listdir(results_path)
     all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
