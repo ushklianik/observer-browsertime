@@ -1,7 +1,7 @@
 import math
 import requests
 from traceback import format_exc
-from os import listdir, rename
+import os
 from json import loads
 import sys
 from datetime import datetime
@@ -72,7 +72,7 @@ def process_page_results(page_name, path, galloper_url, project_id, token, times
             f.write(results_html)
         upload_file(f"{page_name}_{timestamp}_{i}.html", "/", galloper_url, project_id, token)
 
-    upload_static_files(path, page_name, timestamp, galloper_url, project_id, token, loops)
+    upload_page_results_data(path, page_name, timestamp, galloper_url, project_id, token, loops)
 
     page_results = get_page_results(path)
     return page_results
@@ -148,29 +148,37 @@ def finalize_report(galloper_url, project_id, token, report_id):
         print(format_exc())
 
 
-def upload_file(file_name, file_path, galloper_url, project_id, token):
+def upload_file(file_name, file_path, galloper_url, project_id, token, bucket="reports"):
     file = {'file': open(f"{file_path}{file_name}", 'rb')}
     try:
-        requests.post(f"{galloper_url}/api/v1/artifacts/{project_id}/reports/{file_name}",
+        requests.post(f"{galloper_url}/api/v1/artifacts/{project_id}/{bucket}/{file_name}",
                       files=file,
                       headers={'Authorization': f"Bearer {token}"})
     except Exception:
         print(format_exc())
 
 
-def upload_static_files(path, page_name, timestamp, galloper_url, project_id, token, loops):
+def upload_page_results_data(path, page_name, timestamp, galloper_url, project_id, token, loops):
     for i in range(1, loops + 1):
-        filmstrip_files = listdir(f"{path}data/filmstrip/{i}/")
+        filmstrip_files = os.listdir(f"{path}data/filmstrip/{i}/")
         for each in filmstrip_files:
-            rename(f"{path}data/filmstrip/{i}/{each}", f"{path}data/filmstrip/{i}/{page_name}_{timestamp}_{each}")
+            os.rename(f"{path}data/filmstrip/{i}/{each}", f"{path}data/filmstrip/{i}/{page_name}_{timestamp}_{each}")
             upload_file(f"{page_name}_{timestamp}_{each}", f"{path}data/filmstrip/{i}/", galloper_url, project_id, token)
-        screenshot_files = listdir(f"{path}data/screenshots/{i}/")
+        screenshot_files = os.listdir(f"{path}data/screenshots/{i}/")
         for each in screenshot_files:
-            rename(f"{path}data/screenshots/{i}/{each}", f"{path}data/screenshots/{i}/{page_name}_{timestamp}_{each}")
+            os.rename(f"{path}data/screenshots/{i}/{each}", f"{path}data/screenshots/{i}/{page_name}_{timestamp}_{each}")
             upload_file(f"{page_name}_{timestamp}_{each}", f"{path}data/screenshots/{i}/", galloper_url, project_id, token)
 
-        rename(f"{path}data/video/{i}.mp4", f"{path}data/video/{page_name}_{timestamp}_{i}.mp4")
+        os.rename(f"{path}data/video/{i}.mp4", f"{path}data/video/{page_name}_{timestamp}_{i}.mp4")
         upload_file(f"{page_name}_{timestamp}_{i}.mp4", f"{path}data/video/", galloper_url, project_id, token)
+
+
+def upload_static_files(path, galloper_url, project_id, token):
+    static_bucket = "sitespeedstatic"
+    for each in ["css", "img", "img/ico", "js", "font"]:
+        files = [f for f in os.listdir(f"{path}{each}/") if os.path.isfile(f"{path}{each}/{f}")]
+        for file in files:
+            upload_file(file, f"{path}{each}/", galloper_url, project_id, token, bucket=static_bucket)
 
 
 def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token, loops):
@@ -189,12 +197,12 @@ def aggregate_results(page_result):
     aggregated_result = {"requests": len(page_result["total"]), "domains": 1,
                          "time_to_interactive": 0}  # there is no TTI in browsertime json
     for metric in list(page_result.keys()):
-        aggregated_result[metric] = get_aggregated_value(sys.argv[3], page_result[metric])
+        aggregated_result[metric] = get_aggregated_value(sys.argv[4], page_result[metric])
     return aggregated_result
 
 
 def update_page_results_html(html, report_bucket, static_bucket, page_name, timestamp, loops, prefix):
-    html = html.replace(f'<li><a href="{prefix}assets.html">Assets</a></li>', f'<li><a href="{report_bucket}/{timestamp}_assets.html">Assets</a></li> <li><a href="{timestamp}_distributed_report.zip">Download distributed report</a></li>')
+    html = html.replace(f'<li><a href="{prefix}assets.html">Assets</a></li>', f'<li><a href="{report_bucket}/{timestamp}_assets.html">Assets</a></li> <li><a href="{timestamp}_distributed_report.zip">Report</a></li>')
     html = html.replace(f'href="{prefix}css/index.min.css"', f'href="{static_bucket}/index.min.css"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-144.png"', f'href="{static_bucket}/sitespeed.io-144.png"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-114.png"', f'href="{static_bucket}/sitespeed.io-114.png"')

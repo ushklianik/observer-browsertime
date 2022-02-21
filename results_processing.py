@@ -1,5 +1,5 @@
 from util import is_threshold_failed, get_aggregated_value, process_page_results, aggregate_results, update_report, \
-    finalize_report, upload_distributed_report_files, upload_distributed_report
+    finalize_report, upload_distributed_report_files, upload_distributed_report, upload_static_files
 
 from os import environ, listdir
 from traceback import format_exc
@@ -47,7 +47,8 @@ try:
     upload_distributed_report(timestamp, URL, PROJECT_ID, TOKEN)
     results_path = f"/sitespeed.io/sitespeed-result/{sys.argv[2].replace('.', '_')}/"
     dir_name = listdir(results_path)
-    upload_distributed_report_files(f"{results_path}{dir_name[0]}/", timestamp, URL, PROJECT_ID, TOKEN, sys.argv[3])
+    upload_static_files(f"{results_path}{dir_name[0]}/", URL, PROJECT_ID, TOKEN)
+    upload_distributed_report_files(f"{results_path}{dir_name[0]}/", timestamp, URL, PROJECT_ID, TOKEN, int(sys.argv[3]))
     results_path = f"{results_path}{dir_name[0]}/pages/"
     dir_names = listdir(results_path)
     all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
@@ -63,7 +64,7 @@ try:
             sub_dir_path = f"{results_path}{each}/{sub_dir}/"
             if "index.html" in listdir(sub_dir_path):
                 page_result = process_page_results(sub_dir, sub_dir_path, URL, PROJECT_ID, TOKEN, timestamp,
-                                                   prefix="../../../", loops=sys.argv[3])
+                                                   prefix="../../../", loops=int(sys.argv[3]))
                 # Add page results to the summary dict
                 for metric in list(all_results.keys()):
                     all_results[metric].extend(page_result[metric])
@@ -72,7 +73,7 @@ try:
             else:
                 for sub_sub_dir in listdir(sub_dir_path):
                     page_result = process_page_results(sub_sub_dir, f"{sub_dir_path}{sub_sub_dir}/", URL, PROJECT_ID,
-                                                       TOKEN, timestamp, prefix="../../../../", loops=sys.argv[3])
+                                                       TOKEN, timestamp, prefix="../../../../", loops=int(sys.argv[3]))
                     # Add page results to the summary dict
                     for metric in list(all_results.keys()):
                         all_results[metric].extend(page_result[metric])
