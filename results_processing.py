@@ -1,7 +1,7 @@
 from util import is_threshold_failed, get_aggregated_value, process_page_results, aggregate_results, update_report, \
     finalize_report, upload_distributed_report_files, upload_distributed_report, upload_static_files
 
-from os import environ, listdir
+import os
 from traceback import format_exc
 import requests
 from json import loads
@@ -9,16 +9,16 @@ from datetime import datetime
 import pytz
 import sys
 
-PROJECT_ID = environ.get('GALLOPER_PROJECT_ID')
-URL = environ.get('GALLOPER_URL')
-REPORT_ID = environ.get('REPORT_ID')
-BUCKET = environ.get("TESTS_BUCKET")
-REPORTS_BUCKET = environ.get("REPORTS_BUCKET")
-TEST = environ.get("ARTIFACT")
-TOKEN = environ.get("token")
+PROJECT_ID = os.environ.get('GALLOPER_PROJECT_ID')
+URL = os.environ.get('GALLOPER_URL')
+REPORT_ID = os.environ.get('REPORT_ID')
+BUCKET = os.environ.get("TESTS_BUCKET")
+REPORTS_BUCKET = os.environ.get("REPORTS_BUCKET")
+TEST = os.environ.get("ARTIFACT")
+TOKEN = os.environ.get("token")
 PATH_TO_FILE = f'/tmp/{TEST}'
-TESTS_PATH = environ.get("tests_path", '/')
-TEST_NAME = environ.get("JOB_NAME")
+TESTS_PATH = os.environ.get("tests_path", '/')
+TEST_NAME = os.environ.get("JOB_NAME")
 
 try:
     # Get thresholds
@@ -46,39 +46,43 @@ try:
     timestamp = datetime.now().strftime(format_str)
     upload_distributed_report(timestamp, URL, PROJECT_ID, TOKEN)
     results_path = f"/sitespeed.io/sitespeed-result/{sys.argv[2].replace('.', '_')}/"
-    dir_name = listdir(results_path)
+    dir_name = os.listdir(results_path)
     upload_static_files(f"{results_path}{dir_name[0]}/", URL, PROJECT_ID, TOKEN)
     upload_distributed_report_files(f"{results_path}{dir_name[0]}/", timestamp, URL, PROJECT_ID, TOKEN, int(sys.argv[3]))
     results_path = f"{results_path}{dir_name[0]}/pages/"
-    dir_names = listdir(results_path)
+    dir_names = os.listdir(results_path)
     all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
                    "dom_content_loading": [], "dom_processing": [], "first_contentful_paint": [],
                    "largest_contentful_paint": [], "cumulative_layout_shift": [], "total_blocking_time": [],
                    "first_visual_change": [], "last_visual_change": []}
     test_thresholds_total = 0
     test_thresholds_failed = 0
-
+    sub_dir_names = []
     for each in dir_names:
-        sub_dir_names = listdir(f"{results_path}{each}/")
-        for sub_dir in sub_dir_names:
-            sub_dir_path = f"{results_path}{each}/{sub_dir}/"
-            if "index.html" in listdir(sub_dir_path):
-                page_result = process_page_results(sub_dir, sub_dir_path, URL, PROJECT_ID, TOKEN, timestamp,
-                                                   prefix="../../../", loops=int(sys.argv[3]))
+        _sub_dirs = os.listdir(f"{results_path}{each}/")
+        _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{f}/") for f in _sub_dirs]
+        sub_dir_names.extend(_sub_dirs)
+    sub_dir_names.sort(key=lambda x: os.path.getmtime(x))
+    sub_dir_names = [f for f in sub_dir_names]
+    for sub_dir_path in sub_dir_names:
+        sub_dir = sub_dir_path.split("/")[-2]
+        if "index.html" in os.listdir(sub_dir_path):
+            page_result = process_page_results(sub_dir, sub_dir_path, URL, PROJECT_ID, TOKEN, timestamp,
+                                               prefix="../../../", loops=int(sys.argv[3]))
+            # Add page results to the summary dict
+            for metric in list(all_results.keys()):
+                all_results[metric].extend(page_result[metric])
+            aggregated_result = aggregate_results(page_result)
+            update_report(sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
+        else:
+            for sub_sub_dir in os.listdir(sub_dir_path):
+                page_result = process_page_results(sub_sub_dir, f"{sub_dir_path}{sub_sub_dir}/", URL, PROJECT_ID,
+                                                   TOKEN, timestamp, prefix="../../../../", loops=int(sys.argv[3]))
                 # Add page results to the summary dict
                 for metric in list(all_results.keys()):
                     all_results[metric].extend(page_result[metric])
                 aggregated_result = aggregate_results(page_result)
-                update_report(sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
-            else:
-                for sub_sub_dir in listdir(sub_dir_path):
-                    page_result = process_page_results(sub_sub_dir, f"{sub_dir_path}{sub_sub_dir}/", URL, PROJECT_ID,
-                                                       TOKEN, timestamp, prefix="../../../../", loops=int(sys.argv[3]))
-                    # Add page results to the summary dict
-                    for metric in list(all_results.keys()):
-                        all_results[metric].extend(page_result[metric])
-                    aggregated_result = aggregate_results(page_result)
-                    update_report(sub_sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
+                update_report(sub_sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
 
     print("All results")
     print(all_results)
