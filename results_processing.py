@@ -60,10 +60,13 @@ try:
     sub_dir_names = []
     for each in dir_names:
         _sub_dirs = os.listdir(f"{results_path}{each}/")
-        _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{f}/") for f in _sub_dirs]
-        sub_dir_names.extend(_sub_dirs)
+        for _ in _sub_dirs:
+            if "index.html" in os.listdir(f"{results_path}{each}/{_}"):
+                _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{_}/")]
+            else:
+                _sub_dirs = [os.path.join(f"{results_path}{each}/{_}", f"{f}/") for f in os.listdir(f"{results_path}{each}/{_}")]
+            sub_dir_names.extend(_sub_dirs)
     sub_dir_names.sort(key=lambda x: os.path.getmtime(x))
-    sub_dir_names = [f for f in sub_dir_names]
     for sub_dir_path in sub_dir_names:
         sub_dir = sub_dir_path.split("/")[-2]
         if "index.html" in os.listdir(sub_dir_path):
@@ -84,8 +87,6 @@ try:
                 aggregated_result = aggregate_results(page_result)
                 update_report(sub_sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
 
-    print("All results")
-    print(all_results)
     finalize_report(URL, PROJECT_ID, TOKEN, REPORT_ID)
 
     # Email notification
