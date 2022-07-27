@@ -46,8 +46,8 @@ def percentile(data, percentile):
 
 def process_page_results(page_name, path, galloper_url, project_id, token, timestamp, prefix, loops):
     print(f"processing: {path}")
-    report_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/reports"
-    static_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/sitespeedstatic"
+    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports"
+    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic"
     # index.html
     with open(f"{path}index.html", "r", encoding='utf-8') as f:
         index_html = f.read()
@@ -187,8 +187,8 @@ def upload_static_files(path, galloper_url, project_id, token):
 
 
 def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token, loops):
-    report_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/reports"
-    static_bucket = f"{galloper_url}/api/v1/artifacts/{project_id}/sitespeedstatic"
+    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports"
+    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic"
     for each in ["index.html", "detailed.html", "pages.html", "domains.html", "toplist.html", "assets.html", "settings.html", "help.html"]:
         with open(f"{path}{each}", "r", encoding='utf-8') as f:
             html = f.read()
