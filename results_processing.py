@@ -23,6 +23,7 @@ TEST_NAME = os.environ.get("JOB_NAME")
 try:
     # Get thresholds
     res = None
+    # TODO add Thresholds API
     try:
         res = requests.get(
             f"{URL}/api/v1/thresholds/{PROJECT_ID}/ui?name={TEST_NAME}&environment=Default&order=asc",

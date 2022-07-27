@@ -15,7 +15,7 @@ if not all(a for a in [URL, BUCKET, TEST]):
     exit(0)
 
 try:
-    endpoint = f'/api/v1/artifacts/{PROJECT_ID}/{BUCKET}/{TEST}'
+    endpoint = f'/api/v1/artifacts/artifact/{PROJECT_ID}/{BUCKET}/{TEST}'
     headers = {'Authorization': f'bearer {TOKEN}'} if TOKEN else {}
     r = requests.get(f'{URL}/{endpoint}', allow_redirects=True, headers=headers)
     with open(PATH_TO_FILE, 'wb') as file_data:

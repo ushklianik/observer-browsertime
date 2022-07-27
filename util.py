@@ -116,10 +116,13 @@ def update_report(page_name, aggregated_result, galloper_url, project_id, token,
         "locators": [],
         "session_id": "session_id"
     }
-
+    headers = {
+        'Authorization': f"Bearer {token}",
+        'Content-type': 'application/json'
+    }
     try:
-        requests.post(f"{galloper_url}/api/v1/observer/{project_id}/{report_id}", json=data,
-                      headers={'Authorization': f"Bearer {token}"})
+        requests.post(f"{galloper_url}/api/v1/ui_performance/results/{project_id}/{report_id}", json=data,
+                      headers=headers)
     except Exception:
         print(format_exc())
 
@@ -135,15 +138,18 @@ def finalize_report(galloper_url, project_id, token, report_id):
     report_data = {
         "report_id": report_id,
         "time": time.strftime('%Y-%m-%d %H:%M:%S'),
-        "status": "Finished",
+        "status": {"status": "Finished", "percentage": 100, "description": "Test is finished"},
         "thresholds_total": 0,
         "thresholds_failed": 0,
         "exception": ""
     }
-
+    headers = {
+        'Authorization': f"Bearer {token}",
+        'Content-type': 'application/json'
+    }
     try:
-        requests.put(f"{galloper_url}/api/v1/observer/{project_id}", json=report_data,
-                     headers={'Authorization': f"Bearer {token}"})
+        requests.put(f"{galloper_url}/api/v1/ui_performance/reports/{project_id}", json=report_data,
+                     headers=headers)
     except Exception:
         print(format_exc())
 
@@ -151,9 +157,8 @@ def finalize_report(galloper_url, project_id, token, report_id):
 def upload_file(file_name, file_path, galloper_url, project_id, token, bucket="reports"):
     file = {'file': open(f"{file_path}{file_name}", 'rb')}
     try:
-        requests.post(f"{galloper_url}/api/v1/artifacts/{project_id}/{bucket}/{file_name}",
-                      files=file,
-                      headers={'Authorization': f"Bearer {token}"})
+        requests.post(f"{galloper_url}/api/v1/artifacts/artifacts/{project_id}/{bucket}",
+                      files=file, allow_redirects=True, headers={'Authorization': f"Bearer {token}"})
     except Exception:
         print(format_exc())
 
