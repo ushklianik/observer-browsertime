@@ -61,31 +61,40 @@ try:
     for each in dir_names:
         _sub_dirs = os.listdir(f"{results_path}{each}/")
         for _ in _sub_dirs:
-            if "index.html" in os.listdir(f"{results_path}{each}/{_}"):
-                _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{_}/")]
-            else:
-                _sub_dirs = [os.path.join(f"{results_path}{each}/{_}", f"{f}/") for f in os.listdir(f"{results_path}{each}/{_}")]
-            sub_dir_names.extend(_sub_dirs)
+            if os.path.isdir(f"{results_path}{each}/{_}"):
+                if "index.html" in os.listdir(f"{results_path}{each}/{_}"):
+                    _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{_}/")]
+                else:
+                    _sub_dirs = [os.path.join(f"{results_path}{each}/{_}", f"{f}/") for f in os.listdir(f"{results_path}{each}/{_}")]
+                sub_dir_names.extend(_sub_dirs)
+    sub_dir_names = [x for x in sub_dir_names if os.path.isdir(x)]
     sub_dir_names.sort(key=lambda x: os.path.getmtime(x))
     for sub_dir_path in sub_dir_names:
         sub_dir = sub_dir_path.split("/")[-2]
-        if "index.html" in os.listdir(sub_dir_path):
-            page_result = process_page_results(sub_dir, sub_dir_path, URL, PROJECT_ID, TOKEN, timestamp,
-                                               prefix="../../../", loops=int(sys.argv[3]))
-            # Add page results to the summary dict
-            for metric in list(all_results.keys()):
-                all_results[metric].extend(page_result[metric])
-            aggregated_result = aggregate_results(page_result)
-            update_report(sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
-        else:
-            for sub_sub_dir in os.listdir(sub_dir_path):
-                page_result = process_page_results(sub_sub_dir, f"{sub_dir_path}{sub_sub_dir}/", URL, PROJECT_ID,
-                                                   TOKEN, timestamp, prefix="../../../../", loops=int(sys.argv[3]))
-                # Add page results to the summary dict
-                for metric in list(all_results.keys()):
-                    all_results[metric].extend(page_result[metric])
-                aggregated_result = aggregate_results(page_result)
-                update_report(sub_sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
+        if os.path.isdir(f"{sub_dir_path}"):
+            if "index.html" in os.listdir(sub_dir_path):
+                try:
+                    page_result = process_page_results(sub_dir, sub_dir_path, URL, PROJECT_ID, TOKEN, timestamp,
+                                                       prefix="../../../", loops=int(sys.argv[3]))
+                    # Add page results to the summary dict
+                    for metric in list(all_results.keys()):
+                        all_results[metric].extend(page_result[metric])
+                    aggregated_result = aggregate_results(page_result)
+                    update_report(sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
+                except:
+                    ...
+            else:
+                try:
+                    for sub_sub_dir in os.listdir(sub_dir_path):
+                        page_result = process_page_results(sub_sub_dir, f"{sub_dir_path}{sub_sub_dir}/", URL, PROJECT_ID,
+                                                           TOKEN, timestamp, prefix="../../../../", loops=int(sys.argv[3]))
+                        # Add page results to the summary dict
+                        for metric in list(all_results.keys()):
+                            all_results[metric].extend(page_result[metric])
+                        aggregated_result = aggregate_results(page_result)
+                        update_report(sub_sub_dir, aggregated_result, URL, PROJECT_ID, TOKEN, REPORT_ID, timestamp)
+                except:
+                    ...
 
     finalize_report(URL, PROJECT_ID, TOKEN, REPORT_ID)
 
