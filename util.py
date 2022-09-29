@@ -131,14 +131,9 @@ def get_record(page_name, page_results, timestamp, loop):
     return data
 
 
-def finalize_report(galloper_url, project_id, token, report_id, test_thresholds_total, test_thresholds_failed):
+def finalize_report(galloper_url, project_id, token, report_id, test_thresholds_total, test_thresholds_failed,
+                    all_results):
     time = datetime.now(tz=pytz.timezone("UTC"))
-    # exception_message = ""
-    # if test_thresholds_total:
-    #     violated = round(float(test_thresholds_failed / test_thresholds_total) * 100, 2)
-    #     print(f"Failed thresholds: {violated}")
-    #     if violated > 30:
-    #         exception_message = f"Failed thresholds rate more then {violated}%"
     status = {"status": "Finished", "percentage": 100, "description": "Test is finished"}
     exception_message = ""
     if test_thresholds_total:
@@ -150,10 +145,15 @@ def finalize_report(galloper_url, project_id, token, report_id, test_thresholds_
         else:
             status = {"status": "Success", "percentage": 100, "description": f"Successfully met more than "
                                                                              f"{100 - violated}% of thresholds"}
+    # all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
+    #                "dom_content_loading": [], "dom_processing": [], "first_contentful_paint": [],
+    #                "largest_contentful_paint": [], "cumulative_layout_shift": [], "total_blocking_time": [],
+    #                "first_visual_change": [], "last_visual_change": []}
     report_data = {
         "report_id": report_id,
         "time": time.strftime('%Y-%m-%d %H:%M:%S'),
         "status": status,
+        "results": all_results,
         "thresholds_total": test_thresholds_total,
         "thresholds_failed": test_thresholds_failed,
         "exception": exception_message

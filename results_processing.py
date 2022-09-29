@@ -133,7 +133,7 @@ try:
             print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {all_results.get(th['target'])}"
                   f" violates rule {th['comparison']} {th['value']} [FAILED]")
 
-    finalize_report(URL, PROJECT_ID, TOKEN, REPORT_ID, test_thresholds_total, test_thresholds_failed)
+    finalize_report(URL, PROJECT_ID, TOKEN, REPORT_ID, test_thresholds_total, test_thresholds_failed, all_results)
 
     # Email notification
     if len(sys.argv) > 5 and "email" in sys.argv[5].split(";"):
