@@ -5,7 +5,7 @@ on:
     tags: 
       - '*'
   push:
-    branches: [ main ]
+    branches: [ "2.5" ]
 
 jobs:
 
