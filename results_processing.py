@@ -45,7 +45,8 @@ try:
     format_str = "%d%b%Y_%H:%M:%S"
     timestamp = datetime.now().strftime(format_str)
     upload_distributed_report(timestamp, URL, PROJECT_ID, TOKEN)
-    results_path = f"/sitespeed.io/sitespeed-result/{sys.argv[2].replace('.', '_')}/"
+    script_path_split = sys.argv[2].split('/')[-1]
+    results_path = f"/sitespeed.io/sitespeed-result/{script_path_split.replace('.', '_')}/"
     dir_name = os.listdir(results_path)
     upload_static_files(f"{results_path}{dir_name[0]}/", URL, PROJECT_ID, TOKEN)
     upload_distributed_report_files(f"{results_path}{dir_name[0]}/", timestamp, URL, PROJECT_ID, TOKEN, int(sys.argv[3]))
