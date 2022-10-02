@@ -50,16 +50,17 @@ try:
     format_str = "%d%b%Y_%H:%M:%S"
     timestamp = datetime.now().strftime(format_str)
     upload_distributed_report(timestamp, URL, PROJECT_ID, TOKEN)
-    results_path = f"/sitespeed.io/sitespeed-result/{sys.argv[2].replace('.', '_')}/"
+    script_path_split = sys.argv[2].split('/')[-1]
+    results_path = f"/sitespeed.io/sitespeed-result/{script_path_split.replace('.', '_')}/"
     dir_name = os.listdir(results_path)
     upload_static_files(f"{results_path}{dir_name[0]}/", URL, PROJECT_ID, TOKEN)
     upload_distributed_report_files(f"{results_path}{dir_name[0]}/", timestamp, URL, PROJECT_ID, TOKEN, int(sys.argv[3]))
     results_path = f"{results_path}{dir_name[0]}/pages/"
     dir_names = os.listdir(results_path)
-    all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
+    all_results = {"load_time": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
                    "dom_content_loading": [], "dom_processing": [], "first_contentful_paint": [],
                    "largest_contentful_paint": [], "cumulative_layout_shift": [], "total_blocking_time": [],
-                   "first_visual_change": [], "last_visual_change": []}
+                   "first_visual_change": [], "last_visual_change": [], "time_to_interactive": []}
     sub_dir_names = []
     for each in dir_names:
         _sub_dirs = os.listdir(f"{results_path}{each}/")
@@ -77,8 +78,11 @@ try:
                                                prefix="../../../", loops=int(sys.argv[3]))
             # Add page results to the summary dict
             for metric in list(all_results.keys()):
-                all_results[metric].extend(page_result[metric])
-            for i in range(len(page_result["total"])):
+                try:
+                    all_results[metric].extend(page_result[metric])
+                except:
+                    ...
+            for i in range(len(page_result["load_time"])):
                 records.append(get_record(sub_dir, page_result, timestamp, i))
             aggregated_result = aggregate_results(page_result)
             records.append(get_record(sub_dir, aggregated_result, timestamp, -1))
@@ -89,7 +93,7 @@ try:
                 # Add page results to the summary dict
                 for metric in list(all_results.keys()):
                     all_results[metric].extend(page_result[metric])
-                for i in range(len(page_result["total"])):
+                for i in range(len(page_result["load_time"])):
                     records.append(get_record(sub_dir, page_result, timestamp, i))
                 aggregated_result = aggregate_results(page_result)
                 records.append(get_record(sub_dir, aggregated_result, timestamp, 0))

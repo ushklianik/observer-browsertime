@@ -87,7 +87,7 @@ def get_page_results(path):
     with open(json_file, "r") as f:
         page = loads(f.read())
     page_result = {"timestamps": [each for each in page["timestamps"]],
-                   "total": [each for each in page["fullyLoaded"]],
+                   "load_time": [each for each in page["fullyLoaded"]],
                    "speed_index": [each["SpeedIndex"] for each in page["visualMetrics"]],
                    "time_to_first_byte": [each["timings"]["ttfb"] for each in page["browserScripts"]],
                    "time_to_first_paint": [each["timings"]["firstPaint"] for each in page["browserScripts"]],
@@ -145,10 +145,6 @@ def finalize_report(galloper_url, project_id, token, report_id, test_thresholds_
         else:
             status = {"status": "Success", "percentage": 100, "description": f"Successfully met more than "
                                                                              f"{100 - violated}% of thresholds"}
-    # all_results = {"total": [], "speed_index": [], "time_to_first_byte": [], "time_to_first_paint": [],
-    #                "dom_content_loading": [], "dom_processing": [], "first_contentful_paint": [],
-    #                "largest_contentful_paint": [], "cumulative_layout_shift": [], "total_blocking_time": [],
-    #                "first_visual_change": [], "last_visual_change": []}
     report_data = {
         "report_id": report_id,
         "time": time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -285,7 +281,7 @@ def update_test_results(test_name, galloper_url, project_id, token, report_id, r
         for each in records:
             f.write(
                 f"{each['metrics']['timestamps']},{each['name']},{each['identifier']},{each['type']},{each['loop']},"
-                f"{each['metrics']['total']},{each['metrics']['dom_processing']},"
+                f"{each['metrics']['load_time']},{each['metrics']['dom_processing']},"
                 f"{each['metrics']['time_to_interactive']},{each['metrics']['first_contentful_paint']},"
                 f"{each['metrics']['largest_contentful_paint']},"
                 f"{each['metrics']['cumulative_layout_shift']},{each['metrics']['total_blocking_time']},"
