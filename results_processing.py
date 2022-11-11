@@ -140,28 +140,34 @@ try:
     finalize_report(URL, PROJECT_ID, TOKEN, REPORT_ID, test_thresholds_total, test_thresholds_failed, all_results)
 
     # Email notification
-    if len(sys.argv) > 5 and "email" in sys.argv[5].split(";"):
-        secrets_url = f"{URL}/api/v1/secrets/{PROJECT_ID}/"
-        try:
-            email_notification_id = requests.get(secrets_url + "email_notification_id",
-                                                 headers={'Authorization': f'bearer {TOKEN}',
-                                                          'Content-type': 'application/json'}
-                                                 ).json()["secret"]
-        except:
-            email_notification_id = ""
+    try:
+        integrations = loads(os.environ.get("integrations"))
+    except:
+        integrations = None
 
+    if integrations and integrations.get("reporters") and "reporter_email" in integrations["reporters"].keys():
+        email_notification_id = integrations["reporters"]["reporter_email"].get("task_id")
         if email_notification_id:
-            task_url = f"{URL}/api/v1/task/{PROJECT_ID}/{email_notification_id}"
+            emails = integrations["reporters"]["reporter_email"].get("recipients", [])
+            if emails:
+                task_url = f"{URL}/api/v1/tasks/task/{PROJECT_ID}/{email_notification_id}"
 
-            event = {
-                "notification_type": "ui",
-                "test_id": sys.argv[1],
-                "report_id": REPORT_ID
-            }
+                event = {
+                    "notification_type": "ui",
+                    "smtp_host": integrations["reporters"]["reporter_email"]["integration_settings"]["host"],
+                    "smtp_port": integrations["reporters"]["reporter_email"]["integration_settings"]["port"],
+                    "smtp_user": integrations["reporters"]["reporter_email"]["integration_settings"]["user"],
+                    "smtp_sender": integrations["reporters"]["reporter_email"]["integration_settings"]["sender"],
+                    "smtp_password": integrations["reporters"]["reporter_email"]["integration_settings"]["passwd"],
+                    "user_list": emails,
+                    "test_id": sys.argv[1],
+                    "report_id": REPORT_ID
+                }
 
-            res = requests.post(task_url, json=event, headers={'Authorization': f'bearer {TOKEN}',
-                                                               'Content-type': 'application/json'})
-            print(f"Email notification {res.text}")
+                res = requests.post(task_url, json=event, headers={'Authorization': f'bearer {TOKEN}',
+                                                                   'Content-type': 'application/json'})
+                print(res)
+
 
 except Exception:
     print(format_exc())
