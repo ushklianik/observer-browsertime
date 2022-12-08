@@ -165,8 +165,8 @@ def finalize_report(galloper_url, project_id, token, report_id, test_thresholds_
         print(format_exc())
 
 
-def upload_file(file_name, file_path, galloper_url, project_id, token, bucket="reports"):
 
+def upload_file(file_name, file_path, galloper_url, project_id, token, bucket="reports"):
     file = {'file': open(f"{file_path}{file_name}", 'rb')}
     try:
         requests.post(f"{galloper_url}/api/v1/artifacts/artifacts/{project_id}/{bucket}",
@@ -295,4 +295,3 @@ def update_test_results(test_name, galloper_url, project_id, token, report_id, r
             shutil.copyfileobj(f_in, f_out)
 
     upload_file(f"{report_id}.csv.gz", "/tmp/", galloper_url, project_id, token, bucket=bucket)
-
