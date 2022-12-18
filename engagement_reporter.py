@@ -31,11 +31,9 @@ class IssuesConnector(object):
     def search_for_issue(self, issue_hash):
         resp = get(self.query_url, params={'source.id': issue_hash, 'status': 'Open'}, headers=self.headers)
         
-        print(resp.status_code)
         if not resp.status_code == 200:
             return None
         
-        print(resp.json())
         data = resp.json()
         if not data['total'] == 0:
             return True
@@ -48,18 +46,18 @@ class EngagementReporter:
         self.args = args
         self.issues_connector = IssuesConnector(report_url, query_url, token)
 
-    @staticmethod
-    def _prepare_issue_payload(title, description, severity, engagement_id, issue_hash=None):
+    def _prepare_issue_payload(self, title, description, issue_hash=None):
         return {
             'issue_id': issue_hash,
             'title': title,
             'description': description,
-            'severity': severity,
+            'severity': "High",
             'project': None,
             'asset': None,
-            'type': 'Bug',
-            'engagement': engagement_id,
-            'source': 'ui_performance'
+            'type': 'Issue',
+            'engagement': self.engagement_id,
+            'source': 'ui_performance',
+            'report_id': self.args['report_id']
         }
 
     def report_findings(self, failed_thresholds):
@@ -69,8 +67,6 @@ class EngagementReporter:
         payload = self._prepare_issue_payload(
             title, 
             description, 
-            "High", 
-            self.engagement_id,
             hash_code,
         )
         self.issues_connector.create_issue(payload)

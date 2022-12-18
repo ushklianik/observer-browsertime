@@ -200,6 +200,7 @@ try:
                 'thresholds_total': test_thresholds_total,
                 'test_name': TEST_NAME,
                 'env': ENV,
+                'report_id': REPORT_ID,
             }
             reporter_url = URL + payload['report_url'] + '/' + PROJECT_ID
             query_url = URL + payload['query_url'] + '/' + PROJECT_ID
