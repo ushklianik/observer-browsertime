@@ -84,8 +84,8 @@ class EngagementReporter:
                     continue
                 field = field.capitalize().replace('_', ' ')
                 text += f"{field}: {value}\n"
-            text += f"Rule: {rule}"
-            text += "\n"
+            text += f"Rule: {rule}\n"
+            text += "---\n\n"
         return text
     
     def __get_rule(self, aggregation, target, operator, value) -> str:

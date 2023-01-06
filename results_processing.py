@@ -104,6 +104,7 @@ try:
                 aggregated_result = aggregate_results(page_result)
                 records.append(get_record(sub_dir, aggregated_result, timestamp, 0))
 
+
         # Process thresholds with scope = every
         for th in every_thresholds:
             test_thresholds_total += 1
@@ -112,8 +113,10 @@ try:
                       f" comply with rule {th['comparison']} {th['value']} [PASSED]")
             else:
                 test_thresholds_failed += 1
-                th['actual_value'] = aggregated_result.get(th["target"])
-                failed_thresholds.append(th)
+                threshold = dict(**th)
+                threshold['actual_value'] = aggregated_result.get(th["target"])
+                threshold['page'] = sub_dir
+                failed_thresholds.append(threshold)
                 print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {aggregated_result.get(th['target'])}"
                       f" violates rule {th['comparison']} {th['value']} [FAILED]")
 
@@ -127,8 +130,9 @@ try:
                         f" comply with rule {th['comparison']} {th['value']} [PASSED]")
                 else:
                     test_thresholds_failed += 1
-                    th['actual_value'] = aggregated_result.get(th["target"])
-                    failed_thresholds.append(th)
+                    threshold = dict(**th)
+                    threshold['actual_value'] = aggregated_result.get(th["target"])
+                    failed_thresholds.append(threshold)
                     print(
                         f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {aggregated_result.get(th['target'])}"
                         f" violates rule {th['comparison']} {th['value']} [FAILED]")
@@ -144,8 +148,8 @@ try:
                   f" comply with rule {th['comparison']} {th['value']} [PASSED]")
         else:
             test_thresholds_failed += 1
-            th['actual_value'] = actual_value
-            failed_thresholds.append(th)
+            threshold = dict(actual_value=actual_value, **th)
+            failed_thresholds.append(threshold)
             print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {all_results.get(th['target'])}"
                   f" violates rule {th['comparison']} {th['value']} [FAILED]")
 
