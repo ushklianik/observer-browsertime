@@ -150,7 +150,7 @@ try:
         if email_notification_id:
             emails = integrations["reporters"]["reporter_email"].get("recipients", [])
             if emails:
-                task_url = f"{URL}/api/v1/tasks/task/{PROJECT_ID}/{email_notification_id}"
+                task_url = f"{URL}/api/v1/tasks/run_task/{PROJECT_ID}/{email_notification_id}"
 
                 event = {
                     "notification_type": "ui",
