@@ -9,5 +9,6 @@ COPY launch.sh /
 COPY minio_tests_reader.py /
 COPY results_processing.py /
 COPY util.py /
+COPY engagement_reporter.py /
 
 ENTRYPOINT ["/launch.sh"]

@@ -8,6 +8,8 @@ from json import loads
 from datetime import datetime
 import pytz
 import sys
+from engagement_reporter import EngagementReporter
+
 
 PROJECT_ID = os.environ.get('GALLOPER_PROJECT_ID')
 URL = os.environ.get('GALLOPER_URL')
@@ -41,6 +43,8 @@ try:
         thresholds = []
 
     records = []
+
+    failed_thresholds = []
     all_thresholds: list = list(filter(lambda _th: _th['scope'] == 'all', thresholds))
     every_thresholds: list = list(filter(lambda _th: _th['scope'] == 'every', thresholds))
     page_thresholds: list = list(filter(lambda _th: _th['scope'] != 'every' and _th['scope'] != 'all', thresholds))
@@ -61,6 +65,7 @@ try:
                    "dom_content_loading": [], "dom_processing": [], "first_contentful_paint": [],
                    "largest_contentful_paint": [], "cumulative_layout_shift": [], "total_blocking_time": [],
                    "first_visual_change": [], "last_visual_change": [], "time_to_interactive": []}
+    
     sub_dir_names = []
     for each in dir_names:
         _sub_dirs = os.listdir(f"{results_path}{each}/")
@@ -70,6 +75,7 @@ try:
             else:
                 _sub_dirs = [os.path.join(f"{results_path}{each}/{_}", f"{f}/") for f in os.listdir(f"{results_path}{each}/{_}")]
             sub_dir_names.extend(_sub_dirs)
+
     sub_dir_names.sort(key=lambda x: os.path.getmtime(x))
     for sub_dir_path in sub_dir_names:
         sub_dir = sub_dir_path.split("/")[-2]
@@ -98,6 +104,7 @@ try:
                 aggregated_result = aggregate_results(page_result)
                 records.append(get_record(sub_dir, aggregated_result, timestamp, 0))
 
+
         # Process thresholds with scope = every
         for th in every_thresholds:
             test_thresholds_total += 1
@@ -106,6 +113,10 @@ try:
                       f" comply with rule {th['comparison']} {th['value']} [PASSED]")
             else:
                 test_thresholds_failed += 1
+                threshold = dict(**th)
+                threshold['actual_value'] = aggregated_result.get(th["target"])
+                threshold['page'] = sub_dir
+                failed_thresholds.append(threshold)
                 print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {aggregated_result.get(th['target'])}"
                       f" violates rule {th['comparison']} {th['value']} [FAILED]")
 
@@ -119,6 +130,9 @@ try:
                         f" comply with rule {th['comparison']} {th['value']} [PASSED]")
                 else:
                     test_thresholds_failed += 1
+                    threshold = dict(**th)
+                    threshold['actual_value'] = aggregated_result.get(th["target"])
+                    failed_thresholds.append(threshold)
                     print(
                         f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {aggregated_result.get(th['target'])}"
                         f" violates rule {th['comparison']} {th['value']} [FAILED]")
@@ -128,12 +142,14 @@ try:
     # Process thresholds with scope = all
     for th in all_thresholds:
         test_thresholds_total += 1
-        if not is_threshold_failed(get_aggregated_value(th["aggregation"], all_results.get(th["target"])),
-                                   th["comparison"], th["value"]):
+        actual_value = get_aggregated_value(th["aggregation"], all_results.get(th["target"]))
+        if not is_threshold_failed(actual_value, th["comparison"], th["value"]):
             print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {all_results.get(th['target'])}"
                   f" comply with rule {th['comparison']} {th['value']} [PASSED]")
         else:
             test_thresholds_failed += 1
+            threshold = dict(actual_value=actual_value, **th)
+            failed_thresholds.append(threshold)
             print(f"Threshold: {th['scope']} {th['target']} {th['aggregation']} value {all_results.get(th['target'])}"
                   f" violates rule {th['comparison']} {th['value']} [FAILED]")
 
@@ -178,6 +194,27 @@ try:
                                                                    'Content-type': 'application/json'})
                 print(res)
 
+
+    engagement_reporter = None
+    if integrations and integrations.get("reporters") and "reporter_engagement" in integrations['reporters'].keys():
+        if URL and TOKEN and PROJECT_ID and failed_thresholds:
+            payload = integrations['reporters']['reporter_engagement']
+            args = {
+                'thresholds_failed': test_thresholds_failed,
+                'thresholds_total': test_thresholds_total,
+                'test_name': TEST_NAME,
+                'env': ENV,
+                'report_id': REPORT_ID,
+            }
+            reporter_url = URL + payload['report_url'] + '/' + PROJECT_ID
+            query_url = URL + payload['query_url'] + '/' + PROJECT_ID
+            reporter = EngagementReporter(
+                reporter_url, query_url,
+                TOKEN, payload['id'],
+                args
+            )
+            reporter.report_findings(failed_thresholds)
+        
 
 except Exception:
     print(format_exc())
