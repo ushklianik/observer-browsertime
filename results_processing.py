@@ -183,16 +183,12 @@ try:
                     quality_gate_config = integrations['processing']['quality_gate']
                 else:
                     quality_gate_config = {}
-                if quality_gate_config.get('check_performance_degradation') and \
-                        quality_gate_config['check_performance_degradation'] != -1:
-                    event["performance_degradation_rate"] = quality_gate_config['performance_degradation_rate']
-                if quality_gate_config.get('check_missed_thresholds') and \
-                        quality_gate_config['check_missed_thresholds'] != -1:
-                    event["missed_thresholds"] = quality_gate_config['missed_thresholds_rate']
+                event["performance_degradation_rate"] = quality_gate_config.get('degradation_rate')
+                event["missed_thresholds"] = quality_gate_config.get('missed_thresholds')
 
                 res = requests.post(task_url, json=event, headers={'Authorization': f'bearer {TOKEN}',
                                                                    'Content-type': 'application/json'})
-                print(res)
+                print(res.text)
 
 
     engagement_reporter = None
