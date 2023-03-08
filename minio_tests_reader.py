@@ -10,6 +10,7 @@ TEST = environ.get("ARTIFACT")
 TOKEN = environ.get("token")
 PATH_TO_FILE = f'/tmp/{TEST}'
 TESTS_PATH = environ.get("tests_path", '/')
+REPORT_ID = environ.get('REPORT_ID')
 
 if not all(a for a in [URL, BUCKET, TEST]):
     exit(0)
@@ -22,6 +23,16 @@ try:
         file_data.write(r.content)
     with zipfile.ZipFile(PATH_TO_FILE, 'r') as zip_ref:
         zip_ref.extractall(TESTS_PATH)
+
+    headers = {'content-type': 'application/json', 'Authorization': f'bearer {TOKEN}'}
+    url = f'{URL}/api/v1/ui_performance/report_status/{PROJECT_ID}/{REPORT_ID}'
+    data = {"test_status": {"status": "In progress", "percentage": 10,
+                            "description": "Test started."}}
+    response = requests.put(url, json=data, headers=headers)
+    try:
+        print(response.json()["message"])
+    except:
+        print(response.text)
 except Exception:
     print(format_exc())
 
