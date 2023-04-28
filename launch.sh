@@ -26,6 +26,6 @@ python3 /minio_tests_reader.py
 echo "Scripts downloaded"
 ls
 echo "Start test"
-/bin/bash /start.sh /$script_name --multi -n $loops --plugins.add analysisstorer $CMD
+/bin/bash /start.sh /$script_name --multi -n $loops --plugins.add analysisstorer $custom_cmd
 echo "Test is done. Results processing..."
 python3 /results_processing.py $test_id $script_name $loops $aggregation $reports
