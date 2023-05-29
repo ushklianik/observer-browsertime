@@ -8,8 +8,11 @@ from datetime import datetime
 import pytz
 import re
 import shutil
+import urllib.parse
 
 QUALITY_GATE = int(os.environ.get("QUALITY_GATE", 20))
+integrations = loads(os.environ.get("integrations", '{}'))
+s3_config = integrations.get('system', {}).get('s3_integration', {})
 
 
 def is_threshold_failed(actual, comparison, expected):
@@ -48,8 +51,9 @@ def percentile(data, percentile):
 
 def process_page_results(page_name, path, galloper_url, project_id, token, timestamp, prefix, loops):
     print(f"processing: {path}")
-    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports"
-    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic"
+    query_params = '?' + urllib.parse.urlencode(s3_config) if s3_config else ''
+    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports{query_params}"
+    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic{query_params}"
     # index.html
     with open(f"{path}index.html", "r", encoding='utf-8') as f:
         index_html = f.read()
@@ -169,7 +173,7 @@ def finalize_report(galloper_url, project_id, token, report_id, test_thresholds_
 def upload_file(file_name, file_path, galloper_url, project_id, token, bucket="reports"):
     file = {'file': open(f"{file_path}{file_name}", 'rb')}
     try:
-        requests.post(f"{galloper_url}/api/v1/artifacts/artifacts/{project_id}/{bucket}",
+        requests.post(f"{galloper_url}/api/v1/artifacts/artifacts/{project_id}/{bucket}", params=s3_config,
                       files=file, allow_redirects=True, headers={'Authorization': f"Bearer {token}"})
     except Exception:
         print(format_exc())
@@ -202,8 +206,9 @@ def upload_static_files(path, galloper_url, project_id, token):
 
 
 def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token, loops):
-    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports"
-    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic"
+    query_params = '?' + urllib.parse.urlencode(s3_config) if s3_config else ''
+    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports{query_params}"
+    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic{query_params}"
     for each in ["index.html", "detailed.html", "pages.html", "domains.html", "toplist.html", "assets.html",
                  "settings.html", "help.html"]:
         with open(f"{path}{each}", "r", encoding='utf-8') as f:
