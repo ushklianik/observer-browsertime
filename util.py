@@ -13,6 +13,9 @@ import urllib.parse
 QUALITY_GATE = int(os.environ.get("QUALITY_GATE", 20))
 integrations = loads(os.environ.get("integrations", '{}'))
 s3_config = integrations.get('system', {}).get('s3_integration', {})
+print("********************* s3_config")
+print(s3_config)
+print("*********************")
 
 
 def is_threshold_failed(actual, comparison, expected):
@@ -52,8 +55,8 @@ def percentile(data, percentile):
 def process_page_results(page_name, path, galloper_url, project_id, token, timestamp, prefix, loops):
     print(f"processing: {path}")
     query_params = '?' + urllib.parse.urlencode(s3_config) if s3_config else ''
-    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports{query_params}"
-    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic{query_params}"
+    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports"
+    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic"
     # index.html
     with open(f"{path}index.html", "r", encoding='utf-8') as f:
         index_html = f.read()
@@ -124,7 +127,7 @@ def get_record(page_name, page_results, timestamp, loop):
         "identifier": page_name,
         "metrics": page_result,
         "bucket_name": "reports",
-        "file_name": f"{page_name}_{timestamp}_index.html",
+        "file_name": f"{page_name}_{timestamp}_index.html?integration_id={s3_config['integration_id']}&is_local={s3_config['is_local']}",
         "resolution": "auto",
         "browser_version": "chrome",
         "thresholds_total": 0,  # add thresholds
@@ -231,33 +234,33 @@ def aggregate_results(page_result):
 
 def update_page_results_html(html, report_bucket, static_bucket, page_name, timestamp, loops, prefix):
     html = html.replace(f'<li><a href="{prefix}assets.html">Assets</a></li>',
-                        f'<li><a href="{report_bucket}/{timestamp}_assets.html">Assets</a></li> <li><a href="{timestamp}_distributed_report.zip">Report</a></li>')
-    html = html.replace(f'href="{prefix}css/index.min.css"', f'href="{static_bucket}/index.min.css"')
-    html = html.replace(f'href="{prefix}img/ico/sitespeed.io-144.png"', f'href="{static_bucket}/sitespeed.io-144.png"')
-    html = html.replace(f'href="{prefix}img/ico/sitespeed.io-114.png"', f'href="{static_bucket}/sitespeed.io-114.png"')
-    html = html.replace(f'href="{prefix}img/ico/sitespeed.io-72.png"', f'href="{static_bucket}/sitespeed.io-72.png"')
-    html = html.replace(f'href="{prefix}img/ico/sitespeed.io.ico"', f'href="{static_bucket}/sitespeed.io.ico"')
-    html = html.replace(f'src="{prefix}img/sitespeed.io-logo.png"', f'src="{static_bucket}/sitespeed.io-logo.png"')
-    html = html.replace(f'src="{prefix}img/coach.png"', f'src="{static_bucket}/coach.png"')
-    html = html.replace(f'src="{prefix}js/perf-cascade.min.js"', f'src="{static_bucket}/perf-cascade.min.js"')
-    html = html.replace(f'src="{prefix}js/sortable.min.js"', f'src="{static_bucket}/sortable.min.js"')
-    html = html.replace(f'src="{prefix}js/chartist.min.js"', f'src="{static_bucket}/chartist.min.js"')
+                        f'<li><a href="{report_bucket}/{timestamp}_assets.html?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}">Assets</a></li> <li><a href="{timestamp}_distributed_report.zip?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}">Report</a></li>')
+    html = html.replace(f'href="{prefix}css/index.min.css"', f'href="{static_bucket}/index.min.css?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'href="{prefix}img/ico/sitespeed.io-144.png"', f'href="{static_bucket}/sitespeed.io-144.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'href="{prefix}img/ico/sitespeed.io-114.png"', f'href="{static_bucket}/sitespeed.io-114.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'href="{prefix}img/ico/sitespeed.io-72.png"', f'href="{static_bucket}/sitespeed.io-72.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'href="{prefix}img/ico/sitespeed.io.ico"', f'href="{static_bucket}/sitespeed.io.ico?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'src="{prefix}img/sitespeed.io-logo.png"', f'src="{static_bucket}/sitespeed.io-logo.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'src="{prefix}img/coach.png"', f'src="{static_bucket}/coach.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'src="{prefix}js/perf-cascade.min.js"', f'src="{static_bucket}/perf-cascade.min.js?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'src="{prefix}js/sortable.min.js"', f'src="{static_bucket}/sortable.min.js?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'src="{prefix}js/chartist.min.js"', f'src="{static_bucket}/chartist.min.js?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'src="{prefix}js/chartist-plugin-axistitle.min.js"',
-                        f'src="{static_bucket}/chartist-plugin-axistitle.min.js"')
+                        f'src="{static_bucket}/chartist-plugin-axistitle.min.js?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'src="{prefix}js/chartist-plugin-tooltip.min.js"',
-                        f'src="{static_bucket}/chartist-plugin-tooltip.min.js"')
+                        f'src="{static_bucket}/chartist-plugin-tooltip.min.js?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'src="{prefix}js/chartist-plugin-legend.min.js"',
-                        f'src="{static_bucket}/chartist-plugin-legend.min.js"')
-    html = html.replace(f'src="{prefix}js/video.core.novtt.min.js"', f'src="{static_bucket}/video.core.novtt.min.js"')
-    html = html.replace(f'href="{prefix}help.html', f'href="{report_bucket}/{timestamp}_help.html')
+                        f'src="{static_bucket}/chartist-plugin-legend.min.js?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'src="{prefix}js/video.core.novtt.min.js"', f'src="{static_bucket}/video.core.novtt.min.js?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'href="{prefix}help.html', f'href="{report_bucket}/{timestamp}_help.html?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}')
 
     for html_file in ["index.html", "detailed.html", "pages.html", "domains.html", "toplist.html", "settings.html"]:
-        html = html.replace(f'href="{prefix}{html_file}"', f'href="{report_bucket}/{timestamp}_{html_file}"')
+        html = html.replace(f'href="{prefix}{html_file}"', f'href="{report_bucket}/{timestamp}_{html_file}?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"') if "integration_id" not in f'href="{prefix}{html_file}"' else html
     for i in range(1, loops + 1):
-        html = html.replace(f'href="./{i}.html"', f'href="{report_bucket}/{page_name}_{timestamp}_{i}.html"')
+        html = html.replace(f'href="./{i}.html"', f'href="{report_bucket}/{page_name}_{timestamp}_{i}.html?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"') if "integration_id" not in f'href="./{i}.html"' else html
         for data_file_path in [f"data/screenshots/{i}/", "data/video/", f"data/filmstrip/{i}/"]:
-            html = html.replace(data_file_path, f'{report_bucket}/{page_name}_{timestamp}_')
-    html = html.replace('href="metrics.html"', f'href="{report_bucket}/{page_name}_{timestamp}_metrics.html"')
+            html = html.replace(data_file_path, f'{report_bucket}/{page_name}_{timestamp}_') if "integration_id" not in data_file_path else html
+    html = html.replace('href="metrics.html"', f'href="{report_bucket}/{page_name}_{timestamp}_metrics.html?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
 
     # Links for pages
     links = re.findall('href="pages/(.+?)/index.html"', html)
@@ -266,7 +269,7 @@ def update_page_results_html(html, report_bucket, static_bucket, page_name, time
             link = f'href="pages/{each}/index.html"'
             page_name = link.split("/")[-2]
             html = html.replace(f'href="pages/{each}/index.html"',
-                                f'href="{report_bucket}/{page_name}_{timestamp}_index.html"')
+                                f'href="{report_bucket}/{page_name}_{timestamp}_index.html?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"') if "integration_id" not in f'href="pages/{each}/index.html"' else html
         except:
             print(f"failed to update {each} link")
     return html
