@@ -57,34 +57,38 @@ def process_page_results(page_name, path, galloper_url, project_id, token, times
     query_params = '?' + urllib.parse.urlencode(s3_config) if s3_config else ''
     report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports"
     static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic"
-    # index.html
-    with open(f"{path}index.html", "r", encoding='utf-8') as f:
-        index_html = f.read()
-    index_html = update_page_results_html(index_html, report_bucket, static_bucket, page_name, timestamp, loops, prefix)
-    with open(f"/{page_name}_{timestamp}_index.html", 'w') as f:
-        f.write(index_html)
-    upload_file(f"{page_name}_{timestamp}_index.html", "/", galloper_url, project_id, token)
-    # metrics.html
-    with open(f"{path}metrics.html", "r", encoding='utf-8') as f:
-        metrics_html = f.read()
-    metrics_html = update_page_results_html(metrics_html, report_bucket, static_bucket, page_name, timestamp, loops,
-                                            prefix)
-    with open(f"/{page_name}_{timestamp}_metrics.html", 'w') as f:
-        f.write(metrics_html)
-    upload_file(f"{page_name}_{timestamp}_metrics.html", "/", galloper_url, project_id, token)
-
-    # results.html
-    for i in range(1, loops + 1):
-        with open(f"{path}{i}.html", "r", encoding='utf-8') as f:
-            results_html = f.read()
-        results_html = update_page_results_html(results_html, report_bucket, static_bucket, page_name, timestamp, loops,
+    try:
+        # index.html
+        with open(f"{path}index.html", "r", encoding='utf-8') as f:
+            index_html = f.read()
+        index_html = update_page_results_html(index_html, report_bucket, static_bucket, page_name, timestamp, loops,
+                                              prefix)
+        with open(f"/{page_name}_{timestamp}_index.html", 'w') as f:
+            f.write(index_html)
+        upload_file(f"{page_name}_{timestamp}_index.html", "/", galloper_url, project_id, token)
+        # metrics.html
+        with open(f"{path}metrics.html", "r", encoding='utf-8') as f:
+            metrics_html = f.read()
+        metrics_html = update_page_results_html(metrics_html, report_bucket, static_bucket, page_name, timestamp, loops,
                                                 prefix)
-        with open(f"/{page_name}_{timestamp}_{i}.html", 'w') as f:
-            f.write(results_html)
-        upload_file(f"{page_name}_{timestamp}_{i}.html", "/", galloper_url, project_id, token)
+        with open(f"/{page_name}_{timestamp}_metrics.html", 'w') as f:
+            f.write(metrics_html)
+        upload_file(f"{page_name}_{timestamp}_metrics.html", "/", galloper_url, project_id, token)
 
-    upload_page_results_data(path, page_name, timestamp, galloper_url, project_id, token, loops)
+        # results.html
+        for i in range(1, loops + 1):
+            with open(f"{path}{i}.html", "r", encoding='utf-8') as f:
+                results_html = f.read()
+            results_html = update_page_results_html(results_html, report_bucket, static_bucket, page_name, timestamp,
+                                                    loops,
+                                                    prefix)
+            with open(f"/{page_name}_{timestamp}_{i}.html", 'w') as f:
+                f.write(results_html)
+            upload_file(f"{page_name}_{timestamp}_{i}.html", "/", galloper_url, project_id, token)
 
+        upload_page_results_data(path, page_name, timestamp, galloper_url, project_id, token, loops)
+    except Exception as e:
+        print(e)
     page_results = get_page_results(path)
     return page_results
 
