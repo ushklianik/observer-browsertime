@@ -211,8 +211,8 @@ def upload_static_files(path, galloper_url, project_id, token):
 
 def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token, loops):
     query_params = '?' + urllib.parse.urlencode(s3_config) if s3_config else ''
-    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports{query_params}"
-    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic{query_params}"
+    report_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/reports"
+    static_bucket = f"{galloper_url}/api/v1/artifacts/artifact/{project_id}/sitespeedstatic"
     for each in ["index.html", "detailed.html", "pages.html", "domains.html", "toplist.html", "assets.html",
                  "settings.html", "help.html"]:
         with open(f"{path}{each}", "r", encoding='utf-8') as f:
@@ -236,7 +236,7 @@ def aggregate_results(page_result):
 def update_page_results_html(html, report_bucket, static_bucket, page_name, timestamp, loops, prefix):
     html = html.replace(f'<li><a href="{prefix}assets.html">Assets</a></li>',
                         f'<li><a href="{report_bucket}/{timestamp}_assets.html?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}">Assets</a></li> <li><a href="{timestamp}_distributed_report.zip?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}">Report</a></li>')
-    html = html.replace(f'href="{prefix}css/index.min.css"', f'href="{static_bucket}/index.min.css?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'href="{prefix}css/index-light.min.css"', f'href="{static_bucket}/index-light.min.css?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-144.png"', f'href="{static_bucket}/sitespeed.io-144.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-114.png"', f'href="{static_bucket}/sitespeed.io-114.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-72.png"', f'href="{static_bucket}/sitespeed.io-72.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
