@@ -202,10 +202,12 @@ def upload_page_results_data(path, page_name, timestamp, galloper_url, project_i
 
 def upload_static_files(path, galloper_url, project_id, token):
     static_bucket = "sitespeedstatic"
-    for each in ["css", "img", "img/ico", "js", "font"]:
-        files = [f for f in os.listdir(f"{path}{each}/") if os.path.isfile(f"{path}{each}/{f}")]
-        for file in files:
-            upload_file(file, f"{path}{each}/", galloper_url, project_id, token, bucket=static_bucket)
+    for root, dir, files in os.walk(path):
+        root = root.replace("\\", "/")
+        root = root if root.endswith('/') else root + '/'
+        if any(x in root.split('/') for x in ['css', 'img', 'js','font']):
+            for file in files:
+                upload_file(file, root, galloper_url, project_id, token, bucket=static_bucket)
 
 
 def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token, loops):
@@ -239,6 +241,7 @@ def update_page_results_html(html, report_bucket, static_bucket, page_name, time
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-144.png"', f'href="{static_bucket}/sitespeed.io-144.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-114.png"', f'href="{static_bucket}/sitespeed.io-114.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io-72.png"', f'href="{static_bucket}/sitespeed.io-72.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
+    html = html.replace(f'href="{prefix}img/ico/sitespeed.io-57.png"', f'href="{static_bucket}/sitespeed.io-57.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'href="{prefix}img/ico/sitespeed.io.ico"', f'href="{static_bucket}/sitespeed.io.ico?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'src="{prefix}img/sitespeed.io-logo.png"', f'src="{static_bucket}/sitespeed.io-logo.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
     html = html.replace(f'src="{prefix}img/coach.png"', f'src="{static_bucket}/coach.png?integration_id={s3_config["integration_id"]}&is_local={s3_config["is_local"]}"')
