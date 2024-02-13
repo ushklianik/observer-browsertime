@@ -202,12 +202,11 @@ def upload_page_results_data(path, page_name, timestamp, galloper_url, project_i
 
 def upload_static_files(path, galloper_url, project_id, token):
     static_bucket = "sitespeedstatic"
-    for root, dir, files in os.walk(path):
-        root = root.replace("\\", "/")
-        root = root if root.endswith('/') else root + '/'
-        if any(x in root.split('/') for x in ['css', 'img', 'js','font']):
-            for file in files:
-                upload_file(file, root, galloper_url, project_id, token, bucket=static_bucket)
+    for each in ["css", "img", "img/ico", "js"]:
+        files = [f for f in os.listdir(f"{path}{each}/") if os.path.isfile(f"{path}{each}/{f}")]
+        for file in files:
+            upload_file(file, f"{path}{each}/", galloper_url, project_id, token, bucket=static_bucket)
+
 
 
 def upload_distributed_report_files(path, timestamp, galloper_url, project_id, token, loops):
