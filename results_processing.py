@@ -70,11 +70,20 @@ try:
     for each in dir_names:
         _sub_dirs = os.listdir(f"{results_path}{each}/")
         for _ in _sub_dirs:
-            if "index.html" in os.listdir(f"{results_path}{each}/{_}"):
-                _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{_}/")]
-            else:
-                _sub_dirs = [os.path.join(f"{results_path}{each}/{_}", f"{f}/") for f in os.listdir(f"{results_path}{each}/{_}")]
-            sub_dir_names.extend(_sub_dirs)
+            target_path = f"{results_path}{each}/{_}"
+            if os.path.isdir(target_path):
+                if "index.html" in os.listdir(target_path):
+                    _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{_}/")]
+                    if _sub_dirs[0] not in sub_dir_names:
+                        sub_dir_names.extend(_sub_dirs)
+                else:
+                    for f in os.listdir(target_path):
+                        new_path = os.path.join(target_path, f"{f}/")
+                        if os.path.isdir(new_path):
+                            if "index.html" in os.listdir(new_path):
+                                _sub_dirs = [os.path.join(f"{results_path}{each}/", f"{_}/")]
+                                if _sub_dirs[0] not in sub_dir_names:
+                                    sub_dir_names.extend(_sub_dirs)
 
     sub_dir_names.sort(key=lambda x: os.path.getmtime(x))
     for sub_dir_path in sub_dir_names:
@@ -98,11 +107,14 @@ try:
                                                    TOKEN, timestamp, prefix="../../../../", loops=int(sys.argv[3]))
                 # Add page results to the summary dict
                 for metric in list(all_results.keys()):
-                    all_results[metric].extend(page_result[metric])
+                    try:
+                        all_results[metric].extend(page_result[metric])
+                    except:
+                        ...
                 for i in range(len(page_result["load_time"])):
-                    records.append(get_record(sub_dir, page_result, timestamp, i))
+                    records.append(get_record(sub_sub_dir, page_result, timestamp, i))
                 aggregated_result = aggregate_results(page_result)
-                records.append(get_record(sub_dir, aggregated_result, timestamp, 0))
+                records.append(get_record(sub_sub_dir, aggregated_result, timestamp, -1))
 
 
         # Process thresholds with scope = every

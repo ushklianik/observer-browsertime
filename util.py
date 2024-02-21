@@ -119,7 +119,10 @@ def get_record(page_name, page_results, timestamp, loop):
     else:
         page_result = {"time_to_interactive": 0}
         for metric in list(page_results.keys()):
-            page_result[metric] = page_results[metric][loop]
+            if page_results[metric] != [] and loop < len(page_results[metric]):
+                page_result[metric] = page_results[metric][loop]
+            else:
+                page_result[metric] = 0
     data = {
         "name": page_name,
         "type": "page",
@@ -184,20 +187,22 @@ def upload_file(file_name, file_path, galloper_url, project_id, token, bucket="r
 
 def upload_page_results_data(path, page_name, timestamp, galloper_url, project_id, token, loops):
     for i in range(1, loops + 1):
-        filmstrip_files = os.listdir(f"{path}data/filmstrip/{i}/")
-        for each in filmstrip_files:
-            os.rename(f"{path}data/filmstrip/{i}/{each}", f"{path}data/filmstrip/{i}/{page_name}_{timestamp}_{each}")
-            upload_file(f"{page_name}_{timestamp}_{each}", f"{path}data/filmstrip/{i}/", galloper_url, project_id,
-                        token)
-        screenshot_files = os.listdir(f"{path}data/screenshots/{i}/")
-        for each in screenshot_files:
-            os.rename(f"{path}data/screenshots/{i}/{each}",
-                      f"{path}data/screenshots/{i}/{page_name}_{timestamp}_{each}")
-            upload_file(f"{page_name}_{timestamp}_{each}", f"{path}data/screenshots/{i}/", galloper_url, project_id,
-                        token)
-
-        os.rename(f"{path}data/video/{i}.mp4", f"{path}data/video/{page_name}_{timestamp}_{i}.mp4")
-        upload_file(f"{page_name}_{timestamp}_{i}.mp4", f"{path}data/video/", galloper_url, project_id, token)
+        if os.path.isdir(f"{path}data/filmstrip/{i}/"):
+            filmstrip_files = os.listdir(f"{path}data/filmstrip/{i}/")
+            for each in filmstrip_files:
+                os.rename(f"{path}data/filmstrip/{i}/{each}", f"{path}data/filmstrip/{i}/{page_name}_{timestamp}_{each}")
+                upload_file(f"{page_name}_{timestamp}_{each}", f"{path}data/filmstrip/{i}/", galloper_url, project_id,
+                            token)
+        if os.path.isdir(f"{path}data/screenshots/{i}/"):
+            screenshot_files = os.listdir(f"{path}data/screenshots/{i}/")
+            for each in screenshot_files:
+                os.rename(f"{path}data/screenshots/{i}/{each}",
+                        f"{path}data/screenshots/{i}/{page_name}_{timestamp}_{each}")
+                upload_file(f"{page_name}_{timestamp}_{each}", f"{path}data/screenshots/{i}/", galloper_url, project_id,
+                            token)
+        if os.path.exists(f"{path}data/video/{i}.mp4"):
+            os.rename(f"{path}data/video/{i}.mp4", f"{path}data/video/{page_name}_{timestamp}_{i}.mp4")
+            upload_file(f"{page_name}_{timestamp}_{i}.mp4", f"{path}data/video/", galloper_url, project_id, token)
 
 
 def upload_static_files(path, galloper_url, project_id, token):
@@ -228,6 +233,8 @@ def aggregate_results(page_result):
     for metric in list(page_result.keys()):
         if metric == "timestamps":
             aggregated_result[metric] = "0"
+        elif not page_result[metric]:
+            aggregated_result[metric] = 0
         else:
             aggregated_result[metric] = get_aggregated_value(sys.argv[4], page_result[metric])
     return aggregated_result
