@@ -1,4 +1,4 @@
-FROM sitespeedio/sitespeed.io:33.0.0
+FROM sitespeedio/sitespeed.io:36.2.3
 
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y python3-pip

@@ -5,7 +5,7 @@ on:
     tags: 
       - '*'
   push:
-    branches: [ v_33 ]
+    branches: [ v_36 ]
 
 jobs:
 
@@ -22,8 +22,8 @@ jobs:
     -
        name: Build
        run: |
-          docker build -f Dockerfile -t getcarrier/observer-browsertime:latest-33.0.0 .
+          docker build -f Dockerfile -t getcarrier/observer-browsertime:latest-36.2.3 .
     -
        name: Push
        run: |
-         docker push getcarrier/observer-browsertime:latest-33.0.0
+         docker push getcarrier/observer-browsertime:latest-36.2.3
